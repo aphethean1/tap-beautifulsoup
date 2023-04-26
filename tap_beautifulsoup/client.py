@@ -11,7 +11,6 @@ from singer_sdk.streams import Stream
 
 from tap_beautifulsoup.download import download
 
-
 class BeautifulSoupStream(Stream):
     """Stream class for BeautifulSoup streams."""
 
@@ -19,6 +18,11 @@ class BeautifulSoupStream(Stream):
     def site_url(self) -> str:
         """Return the root URL for the stream."""
         return self.config["site_url"]
+
+    @property
+    def site_path(self) -> str:
+        """Return the site path glob pattern for the stream."""
+        return self.config["site_path"]
 
     @property
     def output_folder(self) -> Path:
@@ -73,10 +77,12 @@ class BeautifulSoupStream(Stream):
         self.download()
 
         docs = []
-        for p in Path(self.output_folder).glob(f"{self.site_url}/**/*.html"):
+        self.logger.debug(f"GLOB {self.site_url}/{self.site_path}")
+        for p in Path(self.output_folder).glob(f"{self.site_url}/{self.site_path}"):
             if p.is_dir():
                 continue
 
+            self.logger.debug(f"PROCESSING {p}")
             text = self.parse_file(p)
             if not text:
                 self.logger.warning(f"Could not find {self.top_attrs} in file {p}.")

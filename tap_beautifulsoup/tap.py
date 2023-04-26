@@ -27,6 +27,12 @@ class TapBeautifulSoup(Tap):
             default="sdk.meltano.com/en/latest/",
         ),
         th.Property(
+            "site_path",
+            th.StringType,
+            required=True,
+            default="**/*.html",
+        ),
+        th.Property(
             "output_folder",
             th.StringType,
             required=True,
