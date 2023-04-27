@@ -73,8 +73,9 @@ class BeautifulSoupStream(Stream):
         self.download()
 
         docs = []
-        self.logger.debug(f"GLOB {self.site_url}/{self.site_path}")
-        for p in Path(self.output_folder).glob(f"{self.site_url}/{self.site_path}"):
+        path = self.site_url if len(self.site_path) == 0 else self.site_url + "/" + self.site_path
+        self.logger.warning(f"GLOB {path}")
+        for p in Path(self.output_folder).glob(f"{path}"):
             if p.is_dir():
                 continue
 
