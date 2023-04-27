@@ -43,7 +43,7 @@ class TapBeautifulSoup(Tap):
             th.StringType,
             required=True,
             default="html.parser",
-            allowed_values=["html.parser"],
+            allowed_values=["html.parser", "lxml", "lxml-xml", "html5lib"],
         ),
     ).to_dict()
 

@@ -50,19 +50,15 @@ class BeautifulSoupStream(Stream):
         with open(file, encoding="utf-8") as f:
             data = f.read()
 
+        self.logger.warning(f"PARSING {file} with {self.parser} {str(len(data))}")
         soup = BeautifulSoup(data, features=self.parser)
-        text = soup.find_all(attrs=self.top_attrs)
+        text = soup.find_all("body")
         if len(text) != 0:
             text = text[0].get_text()
         else:
             text = ""
 
         return "\n".join([t for t in text.split("\n") if t])
-
-    @property
-    def top_attrs(self) -> dict:
-        """Return the top-level attributes for the stream."""
-        return {"role": "main"}
 
     def get_records(self, context: dict | None) -> Iterable[dict]:
         """Return a generator of record-type dictionary objects.
@@ -82,10 +78,9 @@ class BeautifulSoupStream(Stream):
             if p.is_dir():
                 continue
 
-            self.logger.debug(f"PROCESSING {p}")
             text = self.parse_file(p)
             if not text:
-                self.logger.warning(f"Could not find {self.top_attrs} in file {p}.")
+                self.logger.warning(f"Could not find 'body' in file {p}.")
 
             record = {
                 "source": str(p),
