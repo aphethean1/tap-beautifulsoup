@@ -5,11 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
+import ocrmypdf
 from bs4 import BeautifulSoup
+from PyPDF2 import PdfReader
+from PyPDF2.errors import PdfReadError
 from singer_sdk import typing as th  # JSON Schema typing helpers
 from singer_sdk.streams import Stream
 
 from tap_beautifulsoup.download import download
+
 
 class BeautifulSoupStream(Stream):
     """Stream class for BeautifulSoup streams."""
@@ -47,16 +51,31 @@ class BeautifulSoupStream(Stream):
         Returns:
             The parsed content.
         """
-        with open(file, encoding="utf-8") as f:
-            data = f.read()
+        text = ""
 
-        self.logger.warning(f"PARSING {file} with {self.parser} {str(len(data))}")
-        soup = BeautifulSoup(data, features=self.parser)
-        text = soup.find_all("body")
-        if len(text) != 0:
-            text = text[0].get_text()
-        else:
-            text = ""
+        try:
+            PdfReader(file)
+        except PdfReadError:
+            self.logger.debug(f"'{file}' is not a PDF, continuing...")
+
+            with open(file, encoding="utf-8") as f:
+                data = f.read()
+
+            self.logger.warning(f"PARSING {file} with {self.parser} {str(len(data))}")
+            soup = BeautifulSoup(data, features=self.parser)
+            text = soup.find_all("body")
+            if len(text) != 0:
+                text = text[0].get_text()
+
+        if not text:
+            output = self.output_folder / f"{file.name}.pdf"
+
+            if not output.exists():
+                ocrmypdf.ocr(file, output, skip_text=True)
+            else:
+                self.logger.info(f"'{file}' has already been processed as '{output}'")
+
+            text = "\n".join([page.extract_text() for page in PdfReader(output).pages])
 
         return "\n".join([t for t in text.split("\n") if t])
 
